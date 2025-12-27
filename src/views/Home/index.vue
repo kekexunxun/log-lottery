@@ -1,3 +1,88 @@
+<template>
+  <div class="absolute z-10 flex flex-col items-center justify-center -translate-x-1/2 left-1/2">
+    <h2
+      class="pt-12 m-0 mb-12 font-mono tracking-wide text-center leading-12 header-title"
+      :style="{ fontSize: `${textSize * 1.5}px`, color: textColor }"
+    >
+      {{ topTitle }}
+    </h2>
+    <div class="flex gap-3">
+      <button
+        v-if="tableData.length <= 0" class="cursor-pointer btn btn-outline btn-secondary btn-lg"
+        @click="router.push('config')"
+      >
+        {{ t('button.noInfoAndImport') }}
+      </button>
+      <button
+        v-if="tableData.length <= 0" class="cursor-pointer btn btn-outline btn-secondary btn-lg"
+        @click="setDefaultPersonList"
+      >
+        {{ t('button.useDefault') }}
+      </button>
+    </div>
+  </div>
+  <div id="container" ref="containerRef" class="3dContainer">
+    <!-- 选中菜单结构 start -->
+    <div id="menu">
+      <button v-if="currentStatus === 0 && tableData.length > 0" class="btn-end " @click="enterLottery">
+        {{ t('button.enterLottery') }}
+      </button>
+
+      <div v-if="currentStatus === 1" class="start">
+        <button class="btn-start" @click="startLottery">
+          <strong>{{ t('button.start') }}</strong>
+          <div id="container-stars">
+            <div id="stars" />
+          </div>
+
+          <div id="glow">
+            <div class="circle" />
+            <div class="circle" />
+          </div>
+        </button>
+      </div>
+
+      <button v-if="currentStatus === 2" class="btn-end btn glass btn-lg" @click="stopLottery">
+        {{ t('button.selectLucky') }}
+      </button>
+
+      <div v-if="currentStatus === 3" class="flex justify-center gap-6 enStop">
+        <div class="start">
+          <button class="btn-start" @click="continueLottery">
+            <strong>{{ t('button.continue') }}</strong>
+            <div id="container-stars">
+              <div id="stars" />
+            </div>
+
+            <div id="glow">
+              <div class="circle" />
+              <div class="circle" />
+            </div>
+          </button>
+        </div>
+
+        <div class="start">
+          <button class="btn-cancel" @click="quitLottery">
+            <strong>{{ t('button.cancel') }}</strong>
+            <div id="container-stars">
+              <div id="stars" />
+            </div>
+
+            <div id="glow">
+              <div class="circle" />
+              <div class="circle" />
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- end -->
+  </div>
+  <StarsBackground :home-background="homeBackground" />
+  <PrizeList class="absolute left-0 top-32" />
+</template>
+
+
 <script setup lang="ts">
 import type { IPersonConfig } from '@/types/storeType'
 import type { Material } from 'three'
@@ -710,89 +795,6 @@ onUnmounted(() => {
 })
 </script>
 
-<template>
-  <div class="absolute z-10 flex flex-col items-center justify-center -translate-x-1/2 left-1/2">
-    <h2
-      class="pt-12 m-0 mb-12 font-mono tracking-wide text-center leading-12 header-title"
-      :style="{ fontSize: `${textSize * 1.5}px`, color: textColor }"
-    >
-      {{ topTitle }}
-    </h2>
-    <div class="flex gap-3">
-      <button
-        v-if="tableData.length <= 0" class="cursor-pointer btn btn-outline btn-secondary btn-lg"
-        @click="router.push('config')"
-      >
-        {{ t('button.noInfoAndImport') }}
-      </button>
-      <button
-        v-if="tableData.length <= 0" class="cursor-pointer btn btn-outline btn-secondary btn-lg"
-        @click="setDefaultPersonList"
-      >
-        {{ t('button.useDefault') }}
-      </button>
-    </div>
-  </div>
-  <div id="container" ref="containerRef" class="3dContainer">
-    <!-- 选中菜单结构 start -->
-    <div id="menu">
-      <button v-if="currentStatus === 0 && tableData.length > 0" class="btn-end " @click="enterLottery">
-        {{ t('button.enterLottery') }}
-      </button>
-
-      <div v-if="currentStatus === 1" class="start">
-        <button class="btn-start" @click="startLottery">
-          <strong>{{ t('button.start') }}</strong>
-          <div id="container-stars">
-            <div id="stars" />
-          </div>
-
-          <div id="glow">
-            <div class="circle" />
-            <div class="circle" />
-          </div>
-        </button>
-      </div>
-
-      <button v-if="currentStatus === 2" class="btn-end btn glass btn-lg" @click="stopLottery">
-        {{ t('button.selectLucky') }}
-      </button>
-
-      <div v-if="currentStatus === 3" class="flex justify-center gap-6 enStop">
-        <div class="start">
-          <button class="btn-start" @click="continueLottery">
-            <strong>{{ t('button.continue') }}</strong>
-            <div id="container-stars">
-              <div id="stars" />
-            </div>
-
-            <div id="glow">
-              <div class="circle" />
-              <div class="circle" />
-            </div>
-          </button>
-        </div>
-
-        <div class="start">
-          <button class="btn-cancel" @click="quitLottery">
-            <strong>{{ t('button.cancel') }}</strong>
-            <div id="container-stars">
-              <div id="stars" />
-            </div>
-
-            <div id="glow">
-              <div class="circle" />
-              <div class="circle" />
-            </div>
-          </button>
-        </div>
-      </div>
-    </div>
-    <!-- end -->
-  </div>
-  <StarsBackground :home-background="homeBackground" />
-  <PrizeList class="absolute left-0 top-32" />
-</template>
 
 <style scoped lang="scss">
 #menu {

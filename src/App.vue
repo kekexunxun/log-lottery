@@ -1,3 +1,29 @@
+<template>
+  <dialog id="my_modal_1" ref="tipDialog" class="border-none modal">
+    <div class="modal-box">
+      <h3 class="text-lg font-bold">
+        {{ t('dialog.titleTip') }}
+      </h3>
+      <p v-if="judgeMobile()" class="py-4">
+        {{ t('dialog.dialogPCWeb') }}
+      </p>
+      <p v-if=" !judgeChromeOrEdge()" class="py-4">
+        {{ t('dialog.dialogLatestBrowser') }}
+      </p>
+      <div class="modal-action">
+        <form method="dialog" class="flex justify-start w-full gap-3">
+          <!-- if there is a button in form, it will close the modal -->
+          <button class="btn">
+            {{ t('button.confirm') }}
+          </button>
+        </form>
+      </div>
+    </div>
+  </dialog>
+  <router-view />
+  <PlayMusic class="absolute right-0 bottom-1/2" />
+</template>
+
 <script setup lang="ts">
 import PlayMusic from '@/components/PlayMusic/index.vue'
 import useStore from '@/store'
@@ -23,7 +49,6 @@ function setCurrentPrize() {
   for (let i = 0; i < prizeList.value.length; i++) {
     if (!prizeList.value[i].isUsed) {
       prizeConfig.setCurrentPrize(prizeList.value[i])
-
       break
     }
   }
@@ -57,30 +82,4 @@ onMounted(() => {
 })
 </script>
 
-<template>
-  <dialog id="my_modal_1" ref="tipDialog" class="border-none modal">
-    <div class="modal-box">
-      <h3 class="text-lg font-bold">
-        {{ t('dialog.titleTip') }}
-      </h3>
-      <p v-if="judgeMobile()" class="py-4">
-        {{ t('dialog.dialogPCWeb') }}
-      </p>
-      <p v-if=" !judgeChromeOrEdge()" class="py-4">
-        {{ t('dialog.dialogLatestBrowser') }}
-      </p>
-      <div class="modal-action">
-        <form method="dialog" class="flex justify-start w-full gap-3">
-          <!-- if there is a button in form, it will close the modal -->
-          <button class="btn">
-            {{ t('button.confirm') }}
-          </button>
-        </form>
-      </div>
-    </div>
-  </dialog>
-  <router-view />
-  <PlayMusic class="absolute right-0 bottom-1/2" />
-</template>
 
-<style scoped lang="scss"></style>

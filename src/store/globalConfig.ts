@@ -2,7 +2,7 @@ import type { IImage, IMusic } from '@/types/storeType'
 import i18n, { browserLanguage } from '@/locales/i18n'
 import { defineStore } from 'pinia'
 import { defaultImageList, defaultMusicList, defaultPatternList } from './data'
-// import { IPrizeConfig } from '@/types/storeType';
+
 export const useGlobalConfig = defineStore('global', {
   state() {
     return {

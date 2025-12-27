@@ -74,5 +74,3 @@ const actionsColumns = computed<any[]>(() => {
     </table>
   </div>
 </template>
-
-<style lang='scss' scoped></style>

@@ -1,23 +1,27 @@
+<template>
+    <div class="home-background w-screen h-screen overflow-hidden" v-if="homeBackground.url">
+        <img :src="imgUrl" class="w-full h-full object-cover" alt="">
+    </div>
+    <div v-else class="w-screen h-screen overflow-hidden" ref="starRef">
+    </div>
+</template>
+
+
 <script setup lang='ts'>
 import Sparticles from 'sparticles';
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useElementSize } from '@vueuse/core';
 import localforage from 'localforage'
-const props = defineProps({
-    homeBackground: {
-        type: Object,
-        default: () => ({
-            id: '',
-            name: '',
-            url: ''
-        })
-    }
-})
+
+const props = defineProps<{
+    homeBackground: { id?: string, name?: string, url?: string }
+}>()
+
 const imageDbStore = localforage.createInstance({
     name: 'imgStore'
 })
 const imgUrl = ref('')
-const starRef = ref();
+const starRef = ref()
 
 const { width, height } = useElementSize(starRef);
 let options = ref({ shape: 'star', parallax: 1.2, rotate: true, twinkle: true, speed: 10, count: 200 });
@@ -58,14 +62,5 @@ onUnmounted(() => {
 })
 </script>
 
-<template>
-    <div class="home-background w-screen h-screen overflow-hidden" v-if="homeBackground.url">
-        <img :src="imgUrl" class="w-full h-full object-cover" alt="">
-    </div>
-    <div v-else class="w-screen h-screen overflow-hidden" ref="starRef">
-    </div>
-</template>
 
-<style lang='scss' scoped>
 
-</style>
