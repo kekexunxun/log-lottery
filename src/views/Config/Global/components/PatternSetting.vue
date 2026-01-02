@@ -1,58 +1,40 @@
-<script setup lang='ts'>
-import { computed } from 'vue'
-
-const props = defineProps({
-  rowCount: {
-    type: Number,
-    default: 17,
-  },
-  cardColor: {
-    type: String,
-    default: '#fff',
-  },
-  patternColor: {
-    type: String,
-    default: '#000',
-  },
-  patternList: {
-    type: Array,
-    default: () => [],
-  },
-})
-const data = computed(() => {
-  return props
-})
-
-function updatePatternList(event: Event, item: number) {
-  if (data.value.patternList.includes(item)) {
-    const index = data.value.patternList.indexOf(item)
-    data.value.patternList.splice(index, 1)
-  }
-  else {
-    data.value.patternList.push(item)
-  }
-  // emits
-}
-</script>
-
 <template>
   <div class="w-full h-auto">
-    <ul class="pattern-list" :style="{ gridTemplateColumns: `repeat(${data.rowCount},1fr)` }">
-      <li v-for="item in data.rowCount * 7" :key="item" class="w-5 h-5" :style="{ backgroundColor: data.patternList.includes(item) ? data.patternColor : data.cardColor }" @click.stop="(event) => updatePatternList(event, item)" />
+    <ul
+      class="grid grid-rows-[repeat(7,1fr)] gap-px p-0 m-0 border border-black"
+      :style="{ gridTemplateColumns: `repeat(${props.rowCount}, 20px)` }"
+    >
+      <li
+        v-for="item in props.rowCount * 7"
+        :key="item"
+        class="w-5 h-5 cursor-pointer"
+        :style="{ backgroundColor: patternList.includes(item) ? props.patternColor : props.cardColor }"
+        @click.stop="updatePatternList(item)"
+      />
     </ul>
   </div>
 </template>
 
-<style lang='scss' scoped>
-    .pattern-list{
-        margin: 0;
-        padding: 0;
-        display:grid;
-        grid-template-rows:repeat(7,1fr);
-        grid-gap:1px;
-        border:1px solid #000;
-        li{
-            cursor:pointer;
-        }
-    }
-</style>
+<script setup lang="ts">
+interface Props {
+  rowCount?: number
+  cardColor?: string
+  patternColor?: string
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  rowCount: 17,
+  cardColor: '#ffffff',
+  patternColor: '#000'
+})
+
+const patternList = defineModel<number[]>('patternList', { default: () => [] })
+
+function updatePatternList(item: number) {
+  if (patternList.value.includes(item)) {
+    patternList.value = patternList.value.filter((i) => i !== item)
+  } else {
+    patternList.value = [...patternList.value, item]
+  }
+}
+</script>

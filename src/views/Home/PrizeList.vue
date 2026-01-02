@@ -1,459 +1,358 @@
-<script setup lang='ts'>
-import type { IPrizeConfig } from '../../types/storeType'
-import defaultPrizeImage from '@/assets/images/龙.png'
-import ImageSync from '@/components/ImageSync/index.vue'
+<template>
+  <div class="flex items-center">
+    <PrizeDialog v-model="isDialogOpen" is-temporary :prize="temporaryPrize" @submit="handleDialogSubmit" />
 
-import EditSeparateDialog from '@/components/NumberSeparate/EditSeparateDialog.vue'
-import i18n from '@/locales/i18n'
-import useStore from '@/store'
+    <div
+      class="fixed left-0 top-1/2 -translate-y-1/2 z-50 flex items-center transition-transform duration-500 ease-in-out"
+      :class="prizeShow ? 'translate-x-0' : '-translate-x-[calc(100%-24px)]'"
+    >
+      <div class="flex items-center">
+        <div
+          class="flex flex-col gap-2 p-2 rounded-r-xl bg-slate-800/40 backdrop-blur-md border-y border-r border-white/10 shadow-2xl"
+        >
+          <!-- 临时奖品 -->
+          <div v-if="temporaryPrize.isShow && !temporaryPrize.isUsed" class="mb-2">
+            <div :class="currentPrize.id === temporaryPrize.id ? 'current-prize' : ''" class="w-fit">
+              <Card class="h-20 w-72 bg-orange-500/10 border-orange-500/30">
+                <div
+                  class="relative flex flex-row items-center justify-between w-full h-full"
+                  :class="{ 'grayscale-[0.8] opacity-60': temporaryPrize.isUsed }"
+                >
+                  <div
+                    v-if="temporaryPrize.isUsed"
+                    class="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm rounded-xl flex items-center justify-center"
+                  >
+                    <div
+                      class="border-2 border-red-500/80 text-red-500/90 px-2 py-0.5 rounded-md font-bold text-sm uppercase tracking-[0.2em] -rotate-12 shadow-lg bg-black/20"
+                    >
+                      已结束
+                    </div>
+                  </div>
+                  <figure class="ml-3 w-10 h-10 rounded-xl overflow-hidden shadow-inner bg-black/20">
+                    <img
+                      :src="temporaryPrize.picture.url || defaultPrizeImage"
+                      alt="奖品"
+                      class="object-cover h-full w-full rounded-xl"
+                    />
+                  </figure>
+                  <CardContent class="flex-1 p-2 text-center">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <h2
+                            class="text-base font-semibold overflow-hidden whitespace-nowrap text-ellipsis text-orange-200"
+                          >
+                            {{ temporaryPrize.name }}
+                          </h2>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{{ temporaryPrize.name }} (临时)</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <p class="text-sm text-orange-300/70 mt-1">
+                      {{ temporaryPrize.isUsedCount }}/{{ temporaryPrize.count }}
+                    </p>
+                    <div class="w-full h-1.5 mt-1 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        class="h-full bg-orange-500 transition-all duration-300"
+                        :style="`width: ${(temporaryPrize.isUsedCount / temporaryPrize.count) * 100}%`"
+                      />
+                    </div>
+                  </CardContent>
+                  <div class="flex flex-col gap-1 mr-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      class="h-7 w-7 text-orange-400 hover:text-orange-300 hover:bg-orange-500/20"
+                      @click="addTemporaryPrize"
+                    >
+                      <EditIcon class="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      class="h-7 w-7 text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                      @click="deleteTemporaryPrize"
+                    >
+                      <Trash2Icon class="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+            <div class="h-px bg-white/10 my-2 mx-2"></div>
+          </div>
 
+          <!-- 奖品列表 -->
+          <ul
+            v-else
+            ref="scrollContainer"
+            class="flex flex-col gap-2 max-h-[440px] overflow-y-auto scroll-smooth pr-1 scrollbar-hide"
+          >
+            <li
+              v-for="item in localPrizeList"
+              :key="item.id"
+              :ref="
+                (el) => {
+                  if (item.id === currentPrize.id) currentPrizeRef = el as any
+                }
+              "
+              :class="[currentPrize.id === item.id ? 'current-prize' : '', !item.isShow ? 'hidden' : '']"
+            >
+              <Card class="w-64 h-20 bg-white/5 border-white/10 hover:bg-white/10 transition-colors">
+                <div
+                  class="relative flex flex-row items-center justify-between w-full h-full"
+                  :class="{ 'grayscale-[0.8] opacity-60': item.isUsed }"
+                >
+                  <div
+                    v-if="item.isUsed"
+                    class="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm rounded-xl flex items-center justify-center"
+                  >
+                    <div
+                      class="border-2 border-red-500/80 text-red-500/90 px-2 py-0.5 rounded-md font-bold text-sm uppercase tracking-[0.2em] -rotate-12 shadow-lg bg-black/20"
+                    >
+                      已结束
+                    </div>
+                  </div>
+                  <figure class="ml-3 w-10 h-10 rounded-xl overflow-hidden shadow-inner bg-black/20">
+                    <img :src="item.picture.url || defaultPrizeImage" alt="奖品" class="object-cover h-full w-full" />
+                  </figure>
+                  <CardContent class="flex-1 p-2 text-center">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <h2 class="text-base font-semibold overflow-hidden whitespace-nowrap text-ellipsis">
+                            {{ item.name }}
+                          </h2>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{{ item.name }}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <p class="text-sm text-gray-400 mt-1">{{ item.isUsedCount }}/{{ item.count }}</p>
+                    <div class="w-full h-1.5 mt-1 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        class="h-full bg-primary transition-all duration-300"
+                        :style="`width: ${(item.isUsedCount / item.count) * 100}%`"
+                      />
+                    </div>
+                  </CardContent>
+                </div>
+              </Card>
+            </li>
+          </ul>
+
+          <!-- 底部控制按钮 -->
+          <div class="flex items-center justify-between px-1">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    v-show="!temporaryPrize.isShow"
+                    variant="ghost"
+                    size="icon"
+                    class="h-8 w-8 text-white/50 hover:text-white hover:bg-white/10"
+                    @click="addTemporaryPrize"
+                  >
+                    <PlusIcon class="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>添加临时抽奖活动</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    class="h-8 w-8 text-white/50 hover:text-white hover:bg-white/10"
+                    @click="prizeShow = !prizeShow"
+                  >
+                    <ArrowLeftIcon class="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>隐藏列表</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+
+        <!-- 展开按钮 -->
+        <div v-if="!prizeShow" class="ml-0.5">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="w-6 h-12 rounded-r-lg bg-slate-800/40 backdrop-blur-md border-y border-r border-white/10 text-white/50 hover:text-white hover:bg-white/20 transition-all"
+                  @click="prizeShow = !prizeShow"
+                >
+                  <ArrowRightIcon class="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>展开奖品列表</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { onMounted, ref, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
+import { usePriceStore, useConfigStore } from '@/store'
+import defaultPrizeImage from '@/assets/images/龙.png'
+import PrizeDialog from '@/components/PrizeDialog.vue'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { ArrowLeftIcon, ArrowRightIcon, EditIcon, PlusIcon, Trash2Icon } from 'lucide-vue-next'
 
-import { onMounted, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
+const prizeStore = usePriceStore()
+const configStore = useConfigStore()
+const { prizeList: localPrizeList, currentPrize, temporaryPrize } = storeToRefs(prizeStore)
 
-const { t } = useI18n()
-const prizeConfig = useStore().prizeConfig
-const globalConfig = useStore().globalConfig
-const system = useStore().system
-const { getPrizeConfig: localPrizeList, getCurrentPrize: currentPrize, getTemporaryPrize: temporaryPrize } = storeToRefs(prizeConfig)
-const { getIsShowPrizeList: isShowPrizeList, getImageList: localImageList } = storeToRefs(globalConfig)
-const { getIsMobile: isMobile } = storeToRefs(system)
-const prizeListRef = ref()
-const prizeListContainerRef = ref()
+const scrollContainer = ref<HTMLElement | null>(null)
+const currentPrizeRef = ref<HTMLElement | null>(null)
 
-const temporaryPrizeRef = ref()
-const selectedPrize = ref<IPrizeConfig | null>()
-// 获取prizeListRef高度
-function getPrizeListHeight() {
-  let height = 200
-  if (prizeListRef.value) {
-    height = (prizeListRef.value as HTMLElement).offsetHeight
-  }
+// 控制显示状态
+const prizeShow = ref(false)
 
-  return height
-}
-const prizeShow = ref(structuredClone(isShowPrizeList.value))
-
+const isDialogOpen = ref(false)
 function addTemporaryPrize() {
-  temporaryPrizeRef.value.showModal()
+  isDialogOpen.value = true
+}
+
+function handleDialogSubmit(values: any) {
+  prizeStore.setTemporaryPrize({
+    ...values,
+    count: Number(values.count)
+  })
 }
 
 function deleteTemporaryPrize() {
   temporaryPrize.value.isShow = false
-  prizeConfig.setTemporaryPrize(temporaryPrize.value)
+  prizeStore.setTemporaryPrize(temporaryPrize.value)
 }
-function submitTemporaryPrize() {
-  if (!temporaryPrize.value.name || !temporaryPrize.value.count) {
-    // eslint-disable-next-line no-alert
-    alert(i18n.global.t('error.completeInformation'))
-    return
-  }
-  temporaryPrize.value.isShow = true
-  temporaryPrize.value.id = new Date().getTime().toString()
-  prizeConfig.setCurrentPrize(temporaryPrize.value)
-}
-function selectPrize(item: IPrizeConfig) {
-  selectedPrize.value = item
-  selectedPrize.value.isUsedCount = 0
-  selectedPrize.value.isUsed = false
 
-  if (selectedPrize.value.separateCount.countList.length > 1) {
+// 自动滚动到当前奖项
+const scrollToCurrent = () => {
+  nextTick(() => {
+    if (currentPrizeRef.value && scrollContainer.value) {
+      const container = scrollContainer.value
+      const element = currentPrizeRef.value
+      const containerRect = container.getBoundingClientRect()
+      const elementRect = element.getBoundingClientRect()
+
+      if (elementRect.top < containerRect.top || elementRect.bottom > containerRect.bottom) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }
+    }
+  })
+}
+
+watch(
+  () => [temporaryPrize.value.isShow, temporaryPrize.value.isUsed],
+  () => {
+    setCurrentPrize()
+  }
+)
+
+watch(
+  () => currentPrize.value.id,
+  () => {
+    scrollToCurrent()
+  }
+)
+
+watch(
+  () => configStore.isShowPrizeList,
+  (val) => {
+    prizeShow.value = val
+  }
+)
+
+onMounted(() => {
+  prizeShow.value = configStore.isShowPrizeList
+  setCurrentPrize()
+  setTimeout(scrollToCurrent, 500)
+})
+
+function setCurrentPrize() {
+  if (temporaryPrize.value.isShow && !temporaryPrize.value.isUsed) {
+    prizeStore.setCurrentPrize(temporaryPrize.value)
     return
   }
-  selectedPrize.value.separateCount = {
-    enable: true,
-    countList: [
-      {
-        id: '0',
-        count: item.count,
-        isUsedCount: 0,
-      },
-    ],
-  }
-}
-function submitData(value: any) {
-  selectedPrize.value!.separateCount.countList = value
-  selectedPrize.value = null
-}
-function changePersonCount() {
-  temporaryPrize.value.separateCount.countList = []
-}
-function setCurrentPrize() {
   for (let i = 0; i < localPrizeList.value.length; i++) {
     if (localPrizeList.value[i].isUsedCount < localPrizeList.value[i].count) {
-      prizeConfig.setCurrentPrize(localPrizeList.value[i])
-
+      prizeStore.setCurrentPrize(localPrizeList.value[i])
       return
     }
   }
 }
-onMounted(() => {
-  prizeListContainerRef.value.style.height = `${getPrizeListHeight()}px`
-  setCurrentPrize()
-})
 </script>
 
-<template>
-  <div class="flex items-center">
-    <dialog id="my_modal_1" ref="temporaryPrizeRef" class="border-none modal">
-      <div class="modal-box">
-        <h3 class="text-lg font-bold">
-          {{ t('dialog.titleTemporary') }}
-        </h3>
-        <div class="flex flex-col gap-3">
-          <label class="flex w-full max-w-xs">
-            <div class="label">
-              <span class="label-text">{{ t('table.name') }}:</span>
-            </div>
-            <input
-              v-model="temporaryPrize.name" type="text" :placeholder="t('placeHolder.name')"
-              class="max-w-xs input-sm input input-bordered"
-            >
-          </label>
-          <label class="flex w-full max-w-xs">
-            <div class="label">
-              <span class="label-text">{{ t('table.fullParticipation') }}</span>
-            </div>
-            <input
-              type="checkbox" :checked="temporaryPrize.isAll"
-              class="mt-2 border-solid checkbox checkbox-secondary border-1"
-              @change="temporaryPrize.isAll = !temporaryPrize.isAll"
-            >
-          </label>
-          <label class="flex w-full max-w-xs">
-            <div class="label">
-              <span class="label-text">{{ t('table.setLuckyNumber') }}</span>
-            </div>
-            <input
-              v-model="temporaryPrize.count" type="number" :placeholder="t('placeHolder.winnerCount')" class="max-w-xs input-sm input input-bordered"
-              @change="changePersonCount"
-            >
-          </label>
-          <label class="flex w-full max-w-xs">
-            <div class="label">
-              <span class="label-text">{{ t('table.luckyPeopleNumber') }}</span>
-            </div>
-            <input
-              v-model="temporaryPrize.isUsedCount" disabled type="number" :placeholder="t('placeHolder.winnerCount')"
-              class="max-w-xs input-sm input input-bordered"
-            >
-          </label>
-          <label v-if="temporaryPrize.separateCount" class="flex w-full max-w-xs">
-            <div class="label">
-              <span class="label-text">{{ t('table.onceNumber') }}</span>
-            </div>
-            <div class="flex justify-start h-full" @click="selectPrize(temporaryPrize)">
-              <ul
-                v-if="temporaryPrize.separateCount.countList.length"
-                class="flex flex-wrap w-full h-full gap-1 p-0 pt-1 m-0 cursor-pointer"
-              >
-                <li
-                  v-for="se in temporaryPrize.separateCount.countList"
-                  :key="se.id" class="relative flex items-center justify-center w-8 h-8 bg-slate-600/60 separated"
-                >
-                  <div
-                    class="flex items-center justify-center w-full h-full tooltip"
-                    :data-tip="`${t('tooltip.doneCount') + se.isUsedCount}/${se.count}`"
-                  >
-                    <div
-                      class="absolute left-0 z-50 h-full bg-blue-300/80"
-                      :style="`width:${se.isUsedCount * 100 / se.count}%`"
-                    />
-                    <span>{{ se.count }}</span>
-                  </div>
-                </li>
-              </ul>
-              <button v-else class="btn btn-secondary btn-xs">{{ t('button.setting') }}</button>
-            </div>
-          </label>
-          <label class="flex w-full max-w-xs">
-            <div class="label">
-              <span class="label-text">{{ t('table.image') }}</span>
-            </div>
-            <select v-model="temporaryPrize.picture" class="flex-1 w-12 select select-warning select-sm">
-              <option v-if="temporaryPrize.picture.id" :value="{ id: '', name: '', url: '' }">❌
-              </option>
-              <option disabled selected>{{ t('table.selectPicture') }}</option>
-              <option v-for="picItem in localImageList" :key="picItem.id" class="w-auto" :value="picItem">{{
-                picItem.name }}
-              </option>
-            </select>
-          </label>
-        </div>
-        <div class="modal-action">
-          <form method="dialog" class="flex gap-3">
-            <button class="btn btn-sm" @click="submitTemporaryPrize">
-              {{ t('button.confirm') }}
-            </button>
-            <button class="btn btn-sm">
-              {{ t('button.cancel') }}
-            </button>
-          </form>
-        </div>
-      </div>
-    </dialog>
-    <EditSeparateDialog
-      :total-number="selectedPrize?.count" :separated-number="selectedPrize?.separateCount.countList"
-      @submit-data="submitData"
-    />
-    <div ref="prizeListContainerRef">
-      <div v-if="temporaryPrize.isShow" class="h-20 w-72" :class="temporaryPrize.isShow ? 'current-prize' : ''">
-        <div class="relative flex flex-row items-center justify-between w-full h-full shadow-xl card bg-base-100">
-          <div
-            v-if="temporaryPrize.isUsed"
-            class="absolute z-50 w-full h-full bg-gray-800/70 item-mask rounded-xl"
-          />
-          <figure class="w-10 h-10 rounded-xl">
-            <ImageSync v-if="temporaryPrize.picture.url" :img-item="temporaryPrize.picture" />
-            <img v-else :src="defaultPrizeImage" alt="Prize" class="object-cover h-full rounded-xl">
-          </figure>
-          <div class="items-center p-0 text-center card-body">
-            <div class="tooltip tooltip-left" :data-tip="temporaryPrize.name">
-              <h2 class="p-0 m-0 overflow-hidden w-28 card-title whitespace-nowrap text-ellipsis">
-                {{
-                  temporaryPrize.name }}
-              </h2>
-            </div>
-            <p class="absolute z-40 p-0 m-0 text-gray-300/80 mt-9">
-              {{ temporaryPrize.isUsedCount }}/{{
-                temporaryPrize.count }}
-            </p>
-            <progress
-              class="w-3/4 h-6 progress progress-primary" :value="temporaryPrize.isUsedCount"
-              :max="temporaryPrize.count"
-            />
-            <!-- <p class="p-0 m-0">{{ item.isUsedCount }}/{{ item.count }}</p> -->
-          </div>
-          <div class="flex flex-col gap-1 mr-2">
-            <div class="tooltip tooltip-left" :data-tip="t('tooltip.edit')">
-              <div class="cursor-pointer hover:text-blue-400" @click="addTemporaryPrize">
-                <svg-icon name="edit" />
-              </div>
-            </div>
-            <div class="tooltip tooltip-left" :data-tip="t('tooltip.delete')">
-              <div class="cursor-pointer hover:text-blue-400" @click="deleteTemporaryPrize">
-                <svg-icon name="delete" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <transition name="prize-list" :appear="true">
-        <div v-if="prizeShow && !isMobile && !temporaryPrize.isShow" class="flex items-center">
-          <ul ref="prizeListRef" class="flex flex-col gap-1 p-2 rounded-xl bg-slate-500/50">
-            <li
-              v-for="item in localPrizeList" :key="item.id"
-              :class="currentPrize.id === item.id ? 'current-prize' : ''"
-            >
-              <div
-                v-if="item.isShow"
-                class="relative flex flex-row items-center justify-between w-64 h-20 shadow-xl card bg-base-100"
-              >
-                <div
-                  v-if="item.isUsed"
-                  class="absolute z-50 w-full h-full bg-gray-800/70 item-mask rounded-xl"
-                />
-                <figure class="w-10 h-10 rounded-xl">
-                  <ImageSync v-if="item.picture.url" :img-item="item.picture" />
-                  <img
-                    v-else :src="defaultPrizeImage" alt="Prize"
-                    class="object-cover h-full rounded-xl"
-                  >
-                </figure>
-                <div class="items-center p-0 text-center card-body">
-                  <div class="tooltip tooltip-left" :data-tip="item.name">
-                    <h2
-                      class="w-24 p-0 m-0 overflow-hidden text-center card-title whitespace-nowrap text-ellipsis"
-                    >
-                      {{ item.name }}
-                    </h2>
-                  </div>
-                  <p class="absolute z-40 p-0 m-0 text-gray-300/80 mt-9">
-                    {{ item.isUsedCount }}/{{
-                      item.count }}
-                  </p>
-                  <progress
-                    class="w-3/4 h-6 progress progress-primary" :value="item.isUsedCount"
-                    :max="item.count"
-                  />
-                  <!-- <p class="p-0 m-0">{{ item.isUsedCount }}/{{ item.count }}</p> -->
-                </div>
-              </div>
-            </li>
-          </ul>
-          <div class="flex flex-col gap-3">
-            <div class="tooltip tooltip-right" :data-tip="t('tooltip.prizeList')">
-              <div
-                class="flex items-center w-6 h-8 rounded-r-lg cursor-pointer prize-option bg-slate-500/50"
-                @click="prizeShow = !prizeShow"
-              >
-                <svg-icon name="arrow_left" class="w-full h-full" />
-              </div>
-            </div>
-            <div class="tooltip tooltip-right" :data-tip="t('tooltip.addActivity')">
-              <div
-                class="flex items-center w-6 h-8 rounded-r-lg cursor-pointer prize-option bg-slate-500/50"
-                @click="addTemporaryPrize"
-              >
-                <svg-icon name="add" class="w-full h-full" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </transition>
-    </div>
+<style lang="scss" scoped>
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 
-    <transition name="prize-operate" :appear="true">
-      <div v-show="!prizeShow" class="tooltip tooltip-right" :data-tip="t('tooltip.prizeList')">
-        <div
-          class="flex items-center w-6 h-8 rounded-r-lg cursor-pointer prize-option bg-slate-500/50"
-          @click="prizeShow = !prizeShow"
-        >
-          <svg-icon name="arrow_right" class="w-full h-full" />
-        </div>
-      </div>
-    </transition>
-  </div>
-</template>
-
-<style lang='scss' scoped>
-.label {
-    width: 120px;
-}
-
-.prize-list-enter-active {
-    -webkit-animation: slide-right 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
-    animation: slide-right 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
-}
-
-.prize-list-leave-active {
-    -webkit-animation: slide-left 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
-    animation: slide-left 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
-}
-
-.prize-operate-enter-active {
-    // 延时显示
-    animation: show-operate 0.6s;
-    -webkit-animation: show-operate 0.6s;
+  &::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
 }
 
 .current-prize {
-    position: relative;
-    display: block;
-    overflow: hidden;
-    isolation: isolate;
-
-    border-radius: 20px;
-    padding: 3px;
+  position: relative;
+  display: block;
+  padding: 3px;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 15px;
 }
 
 .current-prize::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 400%;
-    height: 100%;
-    background: linear-gradient(115deg, #4fcf70, #fad648, #a767e5, #12bcfe, #44ce7b);
-    background-size: 25% 100%;
-    animation: an-at-keyframe-css-at-rule-that-translates-via-the-transform-property-the-background-by-negative-25-percent-of-its-width-so-that-it-gives-a-nice-border-animation_-We-use-the-translate-property-to-have-a-nice-transition-so-it_s-not-a-jerk-of-a-start-or-stop .75s linear infinite;
-    // animation-play-state: paused;
-    translate: -5% 0%;
-    transition: translate 0.25s ease-out;
-    animation-play-state: running;
-    transition-duration: 0.75s;
-    translate: 0% 0%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -2;
+  width: 400%;
+  height: 100%;
+  content: '';
+  background: linear-gradient(115deg, #4fcf70, #fad648, #a767e5, #12bcfe, #44ce7b);
+  background-size: 25% 100%;
+  animation: border-rotate 1.5s linear infinite;
 }
 
 .current-prize::after {
-    content: "";
-    position: absolute;
-    inset: 4px;
-    border-top-left-radius: 20px;
-    border-bottom-right-radius: 20px;
-    z-index: -1;
+  position: absolute;
+  inset: 2px;
+  z-index: -1;
+  content: '';
+  background: oklch(0.205 0 0deg);
+  border-radius: 13px;
 }
 
-@keyframes an-at-keyframe-css-at-rule-that-translates-via-the-transform-property-the-background-by-negative-25-percent-of-its-width-so-that-it-gives-a-nice-border-animation_-We-use-the-translate-property-to-have-a-nice-transition-so-it_s-not-a-jerk-of-a-start-or-stop {
-    to {
-        transform: translateX(-25%);
-    }
-}
+@keyframes border-rotate {
+  from {
+    transform: translateX(0);
+  }
 
-@-webkit-keyframes slide-right {
-    0% {
-        -webkit-transform: translateX(0);
-        transform: translateX(0);
-    }
-
-    100% {
-        -webkit-transform: translateX(30px);
-        transform: translateX(30px);
-    }
-}
-
-@keyframes slide-right {
-    0% {
-        -webkit-transform: translateX(-200px);
-        transform: translateX(-200px);
-    }
-
-    100% {
-        -webkit-transform: translateX(0);
-        transform: translateX(0);
-    }
-}
-
-@-webkit-keyframes slide-left {
-    0% {
-        -webkit-transform: translateX(0);
-        transform: translateX(0);
-    }
-
-    100% {
-        -webkit-transform: translateX(-100px);
-        transform: translateX(-100px);
-    }
-}
-
-@keyframes slide-left {
-    0% {
-        -webkit-transform: translateX(0);
-        transform: translateX(0);
-    }
-
-    100% {
-        -webkit-transform: translateX(-400px);
-        transform: translateX(-400px);
-    }
-}
-
-@-webkit-keyframes show-operate {
-    0% {
-        opacity: 0;
-    }
-
-    99% {
-        opacity: 0;
-    }
-
-    100% {
-        opacity: 1;
-    }
-}
-
-@keyframes show-operate {
-    0% {
-        opacity: 0;
-    }
-
-    99% {
-        opacity: 0;
-    }
-
-    100% {
-        opacity: 1;
-    }
+  to {
+    transform: translateX(-25%);
+  }
 }
 </style>

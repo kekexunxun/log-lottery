@@ -1,13 +1,14 @@
 import dayjs from 'dayjs'
+
 // 筛选人员数据
 export function filterData(tableData: any[], localRowCount: number) {
   const dataLength = tableData.length
   let j = 0
   for (let i = 0; i < dataLength; i++) {
-    if (i % localRowCount === 0) {
+    if (i % localRowCount === 0 && i !== 0) {
       j++
     }
-    tableData[i].x = i % localRowCount + 1
+    tableData[i].x = i % localRowCount
     tableData[i].y = j
     tableData[i].id = i
     // 是否中奖

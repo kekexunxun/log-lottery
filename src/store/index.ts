@@ -1,13 +1,3 @@
-import { useGlobalConfig } from './globalConfig'
-import { usePersonConfig } from './personConfig'
-import { usePrizeConfig } from './prizeConfig'
-import { useSystem } from './system'
-
-export default function useStore() {
-  return {
-    personConfig: usePersonConfig(),
-    prizeConfig: usePrizeConfig(),
-    globalConfig: useGlobalConfig(),
-    system: useSystem(),
-  }
-}
+export * from './config'
+export * from './person'
+export * from './price'
