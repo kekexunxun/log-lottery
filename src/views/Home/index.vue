@@ -7,8 +7,9 @@
       {{ configStore.topTitle }}
     </h2>
     <div v-if="tableData.length <= 0" class="flex gap-3">
-      <Button variant="outline" size="lg" @click="navigateToConfig"> 暂无人员信息，去导入 </Button>
-      <Button variant="outline" size="lg" @click="setDefaultPersonList"> 使用默认数据 </Button>
+      <Button variant="outline" size="lg" @click="showLotteryCodeDialog"> 输入抽奖码导入成员 </Button>
+      <!-- <Button variant="outline" size="lg" @click="navigateToConfig"> 手动导入 </Button> -->
+      <!-- <Button variant="outline" size="lg" @click="setDefaultPersonList"> 使用默认数据 </Button> -->
     </div>
   </div>
   <div ref="containerRef" class="3dContainer">
@@ -90,6 +91,7 @@
   </div>
   <StarsBackground />
   <PrizeList />
+  <LotteryCodeDialog v-model:open="lotteryCodeDialogVisible" />
 </template>
 
 <script setup lang="ts">
@@ -106,11 +108,12 @@ import { Object3D, PerspectiveCamera, Scene, Vector3 } from 'three'
 import { CSS3DObject, CSS3DRenderer } from 'three-css3d'
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls.js'
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+// import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
+import LotteryCodeDialog from './LotteryCodeDialog.vue'
 import PrizeList from './PrizeList.vue'
 
-const router = useRouter()
+// const router = useRouter()
 const configStore = useConfigStore()
 const personStore = usePersonStore()
 const priceStore = usePriceStore()
@@ -149,7 +152,13 @@ const personPool = ref<IPersonConfig[]>([])
 const intervalTimer = ref<any>(null)
 // 填充数据，填满七行
 function initTableData() {
-  if (personStore.allPersonList.length <= 0) {
+  // 超过6小时的数据不被认可
+  if (
+    !personStore.initAt ||
+    personStore.initAt < Date.now() - 6 * 60 * 60 * 1000 ||
+    personStore.allPersonList.length <= 0
+  ) {
+    personStore.resetPerson()
     return
   }
   const totalCount = configStore.rowCount * 7
@@ -618,11 +627,11 @@ function centerFire(particleRatio: number, opts: any) {
   })
 }
 
-function setDefaultPersonList() {
-  personStore.setDefaultPersonList()
-  // 刷新页面
-  window.location.reload()
-}
+// function setDefaultPersonList() {
+//   personStore.setDefaultPersonList()
+//   // 刷新页面
+//   window.location.reload()
+// }
 // 随机替换数据
 function randomBallData(mod: 'default' | 'lucky' | 'sphere' = 'default') {
   // 两秒执行一次
@@ -684,8 +693,15 @@ function listenKeyboard(e: KeyboardEvent) {
   }
 }
 
-function navigateToConfig() {
-  router.push('/config/person/all')
+// function navigateToConfig() {
+//   router.push('/config/person/all')
+// }
+
+// 抽奖码相关
+const lotteryCodeDialogVisible = ref(false)
+
+function showLotteryCodeDialog() {
+  lotteryCodeDialogVisible.value = true
 }
 
 function cleanup() {

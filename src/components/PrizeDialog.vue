@@ -145,7 +145,7 @@ const handleOpenUpdate = (value: boolean) => {
           sort: 0,
           desc: '',
           isUsed: false
-        } as IPrizeConfig
+        }
       })
     }
   }
@@ -185,20 +185,27 @@ watch(
 )
 
 watch(
-  () => values.isUsed,
+  () => props.modelValue,
   (newVal) => {
-    if (newVal) {
-      setFieldValue('isUsedCount', values.count)
-    } else {
-      setFieldValue('isUsedCount', 0)
+    if (!newVal) {
+      resetForm()
+      return
     }
+    if (!props.prize) return
+    // 更新表单值
+    resetForm({
+      values: JSON.parse(JSON.stringify(props.prize))
+    })
   }
 )
 
 const onSubmit = handleSubmit(
   (values) => {
-    console.log('Form submitted successfully:', values)
-    emit('submit', { ...values, isShow: props.isTemporary })
+    const data = { ...values, isShow: props.isTemporary }
+    if (props.prize) {
+      data.id = props.prize.id
+    }
+    emit('submit', data)
     emit('update:modelValue', false)
   },
   ({ errors }) => {

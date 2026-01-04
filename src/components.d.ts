@@ -38,6 +38,7 @@ declare module 'vue' {
     DialogContent: typeof import('./components/ui/dialog/DialogContent.vue')['default']
     DialogDescription: typeof import('./components/ui/dialog/DialogDescription.vue')['default']
     DialogFooter: typeof import('./components/ui/dialog/DialogFooter.vue')['default']
+    DialogHeader: typeof import('./components/ui/dialog/DialogHeader.vue')['default']
     DialogTitle: typeof import('./components/ui/dialog/DialogTitle.vue')['default']
     DialogTrigger: typeof import('./components/ui/dialog/DialogTrigger.vue')['default']
     DropdownMenu: typeof import('./components/ui/dropdown-menu/DropdownMenu.vue')['default']

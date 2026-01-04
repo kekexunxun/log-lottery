@@ -6,9 +6,9 @@ class Request {
 
   constructor(config: AxiosRequestConfig) {
     this.instance = axios.create({
-      baseURL: '/api',
+      baseURL: '',
       timeout: 10000,
-      ...config,
+      ...config
     })
 
     // 添加请求拦截器
@@ -24,7 +24,7 @@ class Request {
         console.error('请求拦截器发生错误：', error)
 
         return Promise.reject(error)
-      },
+      }
     )
 
     // 添加响应拦截器
@@ -41,7 +41,7 @@ class Request {
         console.error('响应拦截器发生错误：', error)
 
         return Promise.reject(error)
-      },
+      }
     )
   }
 

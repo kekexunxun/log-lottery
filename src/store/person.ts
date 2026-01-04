@@ -25,12 +25,14 @@ interface IPersonState {
 interface IPersonStore {
   allPersonList: IPersonState[]
   alreadyPersonList: IPersonState[]
+  initAt: number
 }
 
 export const usePersonStore = defineStore('person', {
   state: (): IPersonStore => ({
     allPersonList: [],
-    alreadyPersonList: []
+    alreadyPersonList: [],
+    initAt: 0
   }),
   getters: {
     // 获取未获此奖的人员名单
